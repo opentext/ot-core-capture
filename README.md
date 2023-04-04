@@ -1,4 +1,4 @@
-# ot-core-capture
+# OpenText Core Capture
 
 
 OpenText™ Core Capture Services are SaaS-based capture microservices that provide capabilities to enhance images, create text-searchable PDF documents, and perform automated document classification and data extraction, including a machine-learning mechanism to improve classification and data extraction accuracy over time.  
