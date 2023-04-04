@@ -1,0 +1,2834 @@
+{
+	"info": {
+		"_postman_id": "580eabb0-2fda-4742-bf97-36e7e23ebb42",
+		"name": "Core Capture Services - SmokeTest",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Init: Home and Token Retrieval",
+			"item": [
+				{
+					"name": "Home",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test schema",
+									"const schema = {",
+									"    \"type\": \"object\",",
+									"    \"properties\": {",
+									"        \"_links\": { \"type\": \"object\" }",
+									"    },",
+									"    \"required\": [\"_links\"]",
+									"};",
+									"",
+									"pm.test(\"Validate schema\", () => {",
+									"    pm.response.to.have.status(200);",
+									"    pm.response.to.have.jsonSchema(schema);",
+									"});",
+									"",
+									"// Store",
+									"if (pm.response.json()._links[\"oauth2-token\"].href.indexOf(\"api.opentext.com\") !== -1) {",
+									"    const replaceValue = \"tenants/\" + pm.environment.get(\"tenantid\") + \"/oauth2/token\";",
+									"    pm.environment.set(\"oauth2-token\", pm.response.json()._links['oauth2-token'].href.replace(\"oauth2/token\", replaceValue));",
+									"} else {",
+									"    pm.environment.set(\"oauth2-token\", pm.response.json()._links[\"oauth2-token\"].href);",
+									"}",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/cp-rest/",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								""
+							],
+							"query": [
+								{
+									"key": "",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Retrieve the Home Document"
+					},
+					"response": []
+				},
+				{
+					"name": "GetServiceToken",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test schema",
+									"const schema = {",
+									"    \"type\": \"object\",",
+									"    \"properties\": {",
+									"        \"access_token\": { \"type\": \"string\" }",
+									"    },",
+									"    \"required\": [\"access_token\"]",
+									"};",
+									"",
+									"pm.test(\"Validate schema\", () => {",
+									"    pm.response.to.have.status(200);",
+									"    pm.response.to.have.jsonSchema(schema);",
+									"});",
+									"",
+									"// Store",
+									"pm.environment.set(\"token\", pm.response.json().access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{secret}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{clientid}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{oauth2-token}}",
+							"host": [
+								"{{oauth2-token}}"
+							],
+							"query": [
+								{
+									"key": "",
+									"value": "",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Standard Resources",
+			"item": [
+				{
+					"name": "About",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test schema\r",
+									"const schema = {\r",
+									"    \"type\": \"object\",\r",
+									"    \"properties\": {\r",
+									"        \"returnStatus\": { \"type\": \"object\" },\r",
+									"        \"serviceName\": { \"type\": \"string\" }\r",
+									"    },\r",
+									"    \"required\": [\r",
+									"        \"returnStatus\",\r",
+									"        \"serviceName\"\r",
+									"    ]\r",
+									"};\r",
+									"\r",
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"pm.test(\"Validate schema.\"+message, () => {\r",
+									"    //pm.response.to.have.status(200);\r",
+									"    if(jsonData.returnStatus.status!=200){\r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"    pm.response.to.have.jsonSchema(schema);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Validate Product Name\", function () {\r",
+									"    pm.expect(jsonData.productName).to.eql(\"Open Text Core Capture Services\");\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/cp-rest/about?suppress_response_codes=suppress_response_codes",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"about"
+							],
+							"query": [
+								{
+									"key": "suppress_response_codes",
+									"value": "suppress_response_codes"
+								}
+							]
+						},
+						"description": "Retrieve About resource (requires token)."
+					},
+					"response": []
+				},
+				{
+					"name": "Session",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"pm.test(\"Validate response.\"+message, function () {\r",
+									"    //pm.response.to.have.status(200);\r",
+									"    if(jsonData.returnStatus.status!=200){\r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/cp-rest/session?suppress_response_codes=suppress_response_codes",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session"
+							],
+							"query": [
+								{
+									"key": "suppress_response_codes",
+									"value": "suppress_response_codes"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Services",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"pm.test(\"Validate response.\"+message, function () {\r",
+									"    //pm.response.to.have.status(200);\r",
+									"    if(jsonData.returnStatus.status!=200){\r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Verify services count is greater than 0\",function(){\r",
+									"    var servicesCount=jsonData[\"_embedded\"][\"collection\"].length;\r",
+									"    pm.expect(servicesCount).to.be.greaterThan(0);\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/cp-rest/session/services?suppress_response_codes=suppress_response_codes",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"services"
+							],
+							"query": [
+								{
+									"key": "suppress_response_codes",
+									"value": "suppress_response_codes"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DocTypes",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"pm.test(\"Validate response.\"+message, function () {\r",
+									"    //pm.response.to.have.status(200);\r",
+									"    if(jsonData.returnStatus.status!=200){\r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/cp-rest/session/doctypes?env=D&suppress_response_codes=suppress_response_codes",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"doctypes"
+							],
+							"query": [
+								{
+									"key": "env",
+									"value": "D"
+								},
+								{
+									"key": "suppress_response_codes",
+									"value": "suppress_response_codes"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Tables",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"pm.test(\"Validate response.\"+message, function () {\r",
+									"    //pm.response.to.have.status(200);\r",
+									"    if(jsonData.returnStatus.status!=200){\r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/cp-rest/session/tables?env=D&suppress_response_codes=suppress_response_codes",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"tables"
+							],
+							"query": [
+								{
+									"key": "env",
+									"value": "D"
+								},
+								{
+									"key": "suppress_response_codes",
+									"value": "suppress_response_codes"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Tables ExportProfiles",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"pm.test(\"Validate response.\"+message, function () {\r",
+									"    //pm.response.to.have.status(200);\r",
+									"    if(jsonData.returnStatus.status!=200){\r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/cp-rest/session/tables/exportprofiles?env=D&suppress_response_codes=suppress_response_codes",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"tables",
+								"exportprofiles"
+							],
+							"query": [
+								{
+									"key": "env",
+									"value": "D"
+								},
+								{
+									"key": "suppress_response_codes",
+									"value": "suppress_response_codes"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Tables ImageProcessingProfiles",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"pm.test(\"Validate response.\"+message, function () {\r",
+									"    //pm.response.to.have.status(200);\r",
+									"    if(jsonData.returnStatus.status!=200){\r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/cp-rest/session/tables/imageprocessingprofiles?env=D&suppress_response_codes=suppress_response_codes",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"tables",
+								"imageprocessingprofiles"
+							],
+							"query": [
+								{
+									"key": "env",
+									"value": "D"
+								},
+								{
+									"key": "suppress_response_codes",
+									"value": "suppress_response_codes"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Batches",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"pm.test(\"Validate response.\"+message, function () {\r",
+									"    //pm.response.to.have.status(200);\r",
+									"    if(jsonData.returnStatus.status!=200){\r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/cp-rest/session/batches?env=D&suppress_response_codes=suppress_response_codes",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"batches"
+							],
+							"query": [
+								{
+									"key": "env",
+									"value": "D"
+								},
+								{
+									"key": "suppress_response_codes",
+									"value": "suppress_response_codes"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Upload Files",
+			"item": [
+				{
+					"name": "Upload TestBrokerStatement.tif",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests / Asserts",
+									"const jsonData = pm.response.json();",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;",
+									"pm.test(\"Validate response. \"+message, function () {",
+									"    //pm.response.to.have.status(201);",
+									"    if(jsonData.returnStatus.status!=201){",
+									"        pm.expect.fail(message);",
+									"    }",
+									"});",
+									"",
+									"// Store",
+									"pm.environment.set(\"fileid_testbroker\", pm.response.json().id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"accept-encoding": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "file",
+							"file": {
+								"src": "TestBrokerStatement.tif"
+							}
+						},
+						"url": {
+							"raw": "{{host}}/cp-rest/session/files",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"files"
+							],
+							"query": [
+								{
+									"key": "",
+									"value": "",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Upload BunnyRidge1.tif",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests / Asserts",
+									"const jsonData = pm.response.json();",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;",
+									"pm.test(\"Validate response. \"+message, function () {",
+									"    //pm.response.to.have.status(201);",
+									"    if(jsonData.returnStatus.status!=201){",
+									"        pm.expect.fail(message);",
+									"    }",
+									"});",
+									"",
+									"// Store",
+									"pm.environment.set(\"fileid_bunnyridge1\", pm.response.json().id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "file",
+							"file": {
+								"src": "BunnyRidge1.TIF"
+							}
+						},
+						"url": {
+							"raw": "{{host}}/cp-rest/session/files",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"files"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Upload PDF Doodads plus TestWren",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests / Asserts\r",
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"pm.test(\"Validate response. \"+message, function () {\r",
+									"    //pm.response.to.have.status(201);\r",
+									"    if(jsonData.returnStatus.status!=201){\r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									"// Store\r",
+									"pm.environment.set(\"fileid_pdf_doodads_wren\", pm.response.json().id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "file",
+							"file": {
+								"src": "TestPdf.pdf"
+							}
+						},
+						"url": {
+							"raw": "{{host}}/cp-rest/session/files",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"files"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Barcode Image",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests / Asserts\r",
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"pm.test(\"Validate response. \"+message, function () {\r",
+									"    //pm.response.to.have.status(201);\r",
+									"    if(jsonData.returnStatus.status!=201){\r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									"// Store\r",
+									"pm.environment.set(\"fileid_barcode\", pm.response.json().id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "file",
+							"file": {
+								"src": "Barcode.tif"
+							}
+						},
+						"url": {
+							"raw": "{{host}}/cp-rest/session/files",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"files"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Advanced Recognition",
+			"item": [
+				{
+					"name": "Classify TestBrokerStatement.tif with Default",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests / Asserts\r",
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"\r",
+									"if(jsonData.returnStatus.message==\"\"){\r",
+									"    message=\"error message: \"+jsonData.resultItems[0].errorMessage+\" error code: \"+jsonData.resultItems[0].errorCode;\r",
+									"}\r",
+									"pm.test(\"Validate response. \"+message, function () {\r",
+									"    //pm.response.to.have.status(200);\r",
+									"    if(jsonData.returnStatus.status!=200){      \r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"    else{\r",
+									"        if(jsonData.resultItems[0].errorMessage!=\"\"){\r",
+									"            pm.expect.fail(message);            \r",
+									"        }\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									"var documentType=pm.response.json().resultItems[0].values.find(docType => docType.name === \"DocumentTypeName\" );\r",
+									"\r",
+									"pm.test(\"Validate document type\", function () {\r",
+									"    pm.expect(documentType.value).to.eql(\"TestQABrokerStatementNew\");\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"serviceProps\":\r\n    [\r\n        {\r\n            \"name\":\"Env\",\r\n            \"value\":\"D\"\r\n        },\r\n        {\r\n            \"name\":\"Project\",\r\n            \"value\":\"Default\"\r\n        }\r\n    ],\r\n    \"requestItems\":\r\n    [\r\n        {\r\n            \"nodeId\":1,\r\n            \"values\": null,\r\n            \"files\":\r\n            [\r\n                {\r\n                    \"name\":\"TestBrokerStatement\",\r\n                    \"value\": \"{{fileid_testbroker}}\",\r\n                    \"contentType\":\"image/tiff\",\r\n                    \"fileType\":\"tif\"\r\n                }\r\n            ]\r\n        }\r\n    ]\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/cp-rest/session/services/classify?suppress_response_codes=suppress_response_codes",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"services",
+								"classify"
+							],
+							"query": [
+								{
+									"key": "suppress_response_codes",
+									"value": "suppress_response_codes"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "ClassifyExtractDocument TestBrokerStatement.tif with Default",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests / Asserts\r",
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"\r",
+									"if(jsonData.returnStatus.message==\"\"){\r",
+									"    message=\"error message: \"+jsonData.resultItems[0].errorMessage+\" error code: \"+jsonData.resultItems[0].errorCode;\r",
+									"}\r",
+									"pm.test(\"Validate response. \"+message, function () {\r",
+									"    //pm.response.to.have.status(200);\r",
+									"    if(jsonData.returnStatus.status!=200){      \r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"    else{\r",
+									"        if(jsonData.resultItems[0].errorMessage!=\"\"){\r",
+									"            pm.expect.fail(message);            \r",
+									"        }\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Validate document type\", function () {\r",
+									"    pm.expect(jsonData.resultItems[0].values[0].value[0].docType).to.eql(\"TestQABrokerStatementNew\");\r",
+									"});\r",
+									"\r",
+									"var uim = pm.response.json().resultItems[0].values.find(el => el.name === \"UimDataArray\" );\r",
+									"\r",
+									"pm.test(\"Validate UIM data\",function(){\r",
+									"    var to=uim.value[0].nodeList.find(field=>field.name ===\"To\");\r",
+									"    pm.expect(to.data[0].value).to.include(\"EMC Insurance Company\");\r",
+									"\r",
+									"    var from=uim.value[0].nodeList.find(field=>field.name ===\"From\");\r",
+									"    pm.expect(from.data[0].value).to.include(\"Kline Technology Partners\");\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"serviceProps\":\r\n    [\r\n        {\r\n            \"name\":\"Env\",\r\n            \"value\":\"D\"\r\n        },\r\n        {\r\n            \"name\":\"IncludeOcrData\",\r\n            \"value\":\"True\"\r\n        },\r\n        {\r\n            \"name\":\"EnableDocumentSeparation\",\r\n            \"value\":\"True\"\r\n        },\r\n        {\r\n            \"name\":\"Project\",\r\n            \"value\":\"Default\"\r\n        }\r\n    ],\r\n    \"requestItems\":\r\n    [\r\n        {\r\n            \"nodeId\":1,\r\n            \"values\": null,\r\n            \"files\":\r\n            [\r\n                {\r\n                    \"name\":\"TestBrokerStatement\",\r\n                    \"value\": \"{{fileid_testbroker}}\",\r\n                    \"contentType\":\"image/tiff\",\r\n                    \"fileType\":\"tif\"\r\n                }\r\n            ]\r\n        }\r\n    ]\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/cp-rest/session/services/classifyextractdocument?suppress_response_codes=suppress_response_codes",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"services",
+								"classifyextractdocument"
+							],
+							"query": [
+								{
+									"key": "suppress_response_codes",
+									"value": "suppress_response_codes"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "ClassifyExtractPage TestBrokerStatement.tif with Default",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests / Asserts\r",
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"\r",
+									"if(jsonData.returnStatus.message==\"\"){\r",
+									"    message=\"error message: \"+jsonData.resultItems[0].errorMessage+\" error code: \"+jsonData.resultItems[0].errorCode;\r",
+									"}\r",
+									"pm.test(\"Validate response. \"+message, function () {\r",
+									"    //pm.response.to.have.status(200);\r",
+									"    if(jsonData.returnStatus.status!=200){      \r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"    else{\r",
+									"        if(jsonData.resultItems[0].errorMessage!=\"\"){\r",
+									"            pm.expect.fail(message);            \r",
+									"        }\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									"// Store\r",
+									"var uim = pm.response.json().resultItems[0].values.find(el => el.name.toUpperCase() === \"UIMDATA\" );\r",
+									"pm.environment.set(\"uimdata_ar_last\", JSON.stringify(uim.value));\r",
+									"\r",
+									"var documentType=pm.response.json().resultItems[0].values.find(docType => docType.name === \"DocumentTypeName\" );\r",
+									"\r",
+									"pm.test(\"Validate document type\", function () {\r",
+									"    pm.expect(documentType.value).to.eql(\"TestQABrokerStatementNew\");\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Validate UIM data\",function(){\r",
+									"    var to=uim.value.nodeList.find(field=>field.name ===\"To\");\r",
+									"    pm.expect(to.data[0].value).to.include(\"EMC Insurance Company\");\r",
+									"\r",
+									"    var from=uim.value.nodeList.find(field=>field.name ===\"From\");\r",
+									"    pm.expect(from.data[0].value).to.include(\"Kline Technology Partners\");\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"serviceProps\":\r\n    [\r\n        {\r\n            \"name\":\"Env\",\r\n            \"value\":\"D\"\r\n        },\r\n        {\r\n            \"name\":\"IncludeOcrData\",\r\n            \"value\":\"True\"\r\n        },\r\n        {\r\n            \"name\":\"Project\",\r\n            \"value\":\"Default\"\r\n        }\r\n    ],\r\n    \"requestItems\":\r\n    [\r\n        {\r\n            \"nodeId\":1,\r\n            \"values\": null,\r\n            \"files\":\r\n            [\r\n                {\r\n                    \"name\":\"TestBrokerStatement\",\r\n                    \"value\": \"{{fileid_testbroker}}\",\r\n                    \"contentType\":\"image/tiff\",\r\n                    \"fileType\":\"tif\"\r\n                }\r\n            ]\r\n        }\r\n    ]\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/cp-rest/session/services/classifyextractpage?suppress_response_codes=suppress_response_codes",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"services",
+								"classifyextractpage"
+							],
+							"query": [
+								{
+									"key": "suppress_response_codes",
+									"value": "suppress_response_codes"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "ExtractDocument TestBrokerStatement.tif with Default",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests / Asserts\r",
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"\r",
+									"if(jsonData.returnStatus.message==\"\"){\r",
+									"    message=\"error message: \"+jsonData.resultItems[0].errorMessage+\" error code: \"+jsonData.resultItems[0].errorCode;\r",
+									"}\r",
+									"pm.test(\"Validate response. \"+message, function () {\r",
+									"    //pm.response.to.have.status(200);\r",
+									"    if(jsonData.returnStatus.status!=200){      \r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"    else{\r",
+									"        if(jsonData.resultItems[0].errorMessage!=\"\"){\r",
+									"            pm.expect.fail(message);            \r",
+									"        }\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									"var uim = pm.response.json().resultItems[0].values.find(el => el.name.toUpperCase() === \"UIMDATA\" );\r",
+									"\r",
+									"pm.test(\"Validate UIM data\",function(){\r",
+									"    var to=uim.value.nodeList.find(field=>field.name ===\"To\");\r",
+									"    pm.expect(to.data[0].value).to.include(\"EMC Insurance Company\");\r",
+									"\r",
+									"    var from=uim.value.nodeList.find(field=>field.name ===\"From\");\r",
+									"    pm.expect(from.data[0].value).to.include(\"Kline Technology Partners\");\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"serviceProps\":\r\n    [\r\n        {\r\n            \"name\":\"Env\",\r\n            \"value\":\"D\"\r\n        },\r\n        {\r\n            \"name\":\"IncludeOcrData\",\r\n            \"value\":\"True\"\r\n        },\r\n        {\r\n            \"name\":\"Project\",\r\n            \"value\":\"Default\"\r\n        }\r\n    ],\r\n    \"requestItems\":\r\n    [\r\n        {\r\n            \"nodeId\":1,\r\n            \"values\": \r\n            [\r\n            \t{\r\n\t\t\t\t\t\"name\":\"DocumentTypeName\",\r\n\t\t\t\t\t\"value\":\"TestQABrokerStatementNew\"\r\n\t\t\t\t},\r\n\t\t\t\t{\r\n\t\t\t\t\t\"name\":\"TemplateIds\",\r\n\t\t\t\t\t\"value\":[\"\"]\r\n\t\t\t\t},\r\n\t\t\t\t{\r\n\t\t\t\t\t\"name\":\"RepeatLastTemplate\",\r\n\t\t\t\t\t\"value\":false\r\n\t\t\t\t}\r\n            ],\r\n            \"files\":\r\n            [\r\n                {\r\n                    \"name\":\"TestBrokerStatement\",\r\n                    \"value\": \"{{fileid_testbroker}}\",\r\n                    \"contentType\":\"image/tiff\",\r\n                    \"fileType\":\"tif\"\r\n                }\r\n            ]\r\n        }\r\n    ]\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/cp-rest/session/services/extractdocument?suppress_response_codes=suppress_response_codes",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"services",
+								"extractdocument"
+							],
+							"query": [
+								{
+									"key": "suppress_response_codes",
+									"value": "suppress_response_codes"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "ExtractPage TestBrokerStatement.tif with Default",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests / Asserts\r",
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"\r",
+									"if(jsonData.returnStatus.message==\"\"){\r",
+									"    message=\"error message: \"+jsonData.resultItems[0].errorMessage+\" error code: \"+jsonData.resultItems[0].errorCode;\r",
+									"}\r",
+									"pm.test(\"Validate response. \"+message, function () {\r",
+									"    //pm.response.to.have.status(200);\r",
+									"    if(jsonData.returnStatus.status!=200){      \r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"    else{\r",
+									"        if(jsonData.resultItems[0].errorMessage!=\"\"){\r",
+									"            pm.expect.fail(message);            \r",
+									"        }\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									"var uim = pm.response.json().resultItems[0].values.find(el => el.name.toUpperCase() === \"UIMDATA\" );\r",
+									"\r",
+									"pm.test(\"Validate UIM data\",function(){\r",
+									"    var to=uim.value.nodeList.find(field=>field.name ===\"To\");\r",
+									"    pm.expect(to.data[0].value).to.include(\"EMC Insurance Company\");\r",
+									"\r",
+									"    var from=uim.value.nodeList.find(field=>field.name ===\"From\");\r",
+									"    pm.expect(from.data[0].value).to.include(\"Kline Technology Partners\");\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"serviceProps\":\r\n    [\r\n        {\r\n            \"name\":\"Env\",\r\n            \"value\":\"D\"\r\n        },\r\n        {\r\n            \"name\":\"IncludeOcrData\",\r\n            \"value\":\"True\"\r\n        },\r\n        {\r\n            \"name\":\"Project\",\r\n            \"value\":\"Default\"\r\n        }\r\n    ],\r\n    \"requestItems\":\r\n    [\r\n        {\r\n            \"nodeId\":1,\r\n            \"values\": \r\n            [\r\n            \t{\r\n\t\t\t\t\t\"name\":\"DocumentTypeName\",\r\n\t\t\t\t\t\"value\":\"TestQABrokerStatementNew\"\r\n\t\t\t\t},\r\n\t\t\t\t{\r\n\t\t\t\t\t\"name\":\"TemplateId\",\r\n\t\t\t\t\t\"value\":\"\"\r\n\t\t\t\t},\r\n\t\t\t\t{\r\n\t\t\t\t\t\"name\":\"PageIndex\",\r\n\t\t\t\t\t\"value\":\"0\"\r\n\t\t\t\t}\r\n            ],\r\n            \"files\":\r\n            [\r\n                {\r\n                    \"name\":\"TestBrokerStatement\",\r\n                    \"value\": \"{{fileid_testbroker}}\",\r\n                    \"contentType\":\"image/tiff\",\r\n                    \"fileType\":\"tif\"\r\n                }\r\n            ]\r\n        }\r\n    ]\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/cp-rest/session/services/extractpage?suppress_response_codes=suppress_response_codes",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"services",
+								"extractpage"
+							],
+							"query": [
+								{
+									"key": "suppress_response_codes",
+									"value": "suppress_response_codes"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "IEE Classification, Extraction, Learning",
+			"item": [
+				{
+					"name": "Classify BunnyRidge1.tif with Information Extraction",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests / Asserts\r",
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"\r",
+									"if(jsonData.returnStatus.message==\"\"){\r",
+									"    message=\"error message: \"+jsonData.resultItems[0].errorMessage+\" error code: \"+jsonData.resultItems[0].errorCode;\r",
+									"}\r",
+									"pm.test(\"Validate response. \"+message, function () {\r",
+									"    //pm.response.to.have.status(200);\r",
+									"    if(jsonData.returnStatus.status!=200){      \r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"    else{\r",
+									"        if(jsonData.resultItems[0].errorMessage!=\"\"){\r",
+									"            pm.expect.fail(message);            \r",
+									"        }\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									"// Store\r",
+									"var classId = pm.response.json().resultItems[0].values.find(el => el.name.toUpperCase() === \"CLASSIFICATIONID\" );\r",
+									"pm.environment.set(\"iee_last_classid\", classId.value);\r",
+									"\r",
+									"var documentType=pm.response.json().resultItems[0].values.find(docType => docType.name === \"DocumentTypeName\" );\r",
+									"\r",
+									"pm.test(\"Validate document type\", function () {\r",
+									"    pm.expect(documentType.value).to.eql(\"IE Invoice\");\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Validate Classification ID\", function () {\r",
+									"    pm.expect(classId.value).to.not.be.null;\r",
+									"    pm.expect(classId.value).to.not.eql(\"\");\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"serviceProps\":\r\n    [\r\n        {\r\n            \"name\":\"Env\",\r\n            \"value\":\"D\"\r\n        },\r\n        {\r\n            \"name\":\"Project\",\r\n            \"value\":\"InformationExtraction\"\r\n        }\r\n    ],\r\n    \"requestItems\":\r\n    [\r\n        {\r\n            \"nodeId\":1,\r\n            \"values\": null,\r\n            \"files\":\r\n            [\r\n                {\r\n                    \"name\":\"BunnyRidge1\",\r\n                    \"value\": \"{{fileid_bunnyridge1}}\",\r\n                    \"contentType\":\"image/tiff\",\r\n                    \"fileType\":\"tif\"\r\n                }\r\n            ]\r\n        }\r\n    ]\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/cp-rest/session/services/classify?suppress_response_codes=suppress_response_codes",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"services",
+								"classify"
+							],
+							"query": [
+								{
+									"key": "suppress_response_codes",
+									"value": "suppress_response_codes"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Learning - Classification",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests / Asserts\r",
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"\r",
+									"if(jsonData.returnStatus.message==\"\"){\r",
+									"    message=\"error message: \"+jsonData.resultItems[0].errorMessage+\" error code: \"+jsonData.resultItems[0].errorCode;\r",
+									"}\r",
+									"pm.test(\"Validate response. \"+message, function () {\r",
+									"    //pm.response.to.have.status(200);\r",
+									"    if(jsonData.returnStatus.status!=200){      \r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"    else{\r",
+									"        if(jsonData.resultItems[0].errorMessage!=\"\"){\r",
+									"            pm.expect.fail(message);            \r",
+									"        }\r",
+									"    }\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"serviceProps\": \r\n    [\r\n        {\r\n            \"name\": \"Env\",\r\n            \"value\": \"D\"\r\n        },\r\n        {\r\n            \"name\": \"Project\",\r\n            \"value\": \"InformationExtraction\"\r\n        }\r\n    ],\r\n    \"requestItems\": \r\n    [\r\n        {\r\n            \"nodeId\": 1,\r\n            \"values\": \r\n            [\r\n                {\r\n                    \"name\": \"Mode\",\r\n                    \"value\": \"Classify\"\r\n                },\r\n                {\r\n                    \"name\": \"DocumentType\",\r\n                    \"value\": \"IE Invoice\"\r\n                },\r\n                {\r\n                    \"name\": \"ClassificationPageIds\",\r\n                    \"value\": \r\n                    [\r\n                        \"{{iee_last_classid}}\"\r\n                    ]\r\n                }\r\n            ],\r\n            \"files\": \r\n            [\r\n                {\r\n                    \"name\": \"BunnyRidge1\",\r\n                    \"value\": \"{{fileid_bunnyridge1}}\",\r\n                    \"contentType\": \"image/tiff\",\r\n                    \"fileType\": \"tif\"\r\n                }\r\n            ]\r\n        }\r\n    ]\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/cp-rest/session/services/learning?suppress_response_codes=suppress_response_codes",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"services",
+								"learning"
+							],
+							"query": [
+								{
+									"key": "suppress_response_codes",
+									"value": "suppress_response_codes"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "ClassifyExtractDocument BunnyRidge1.tif with Information Extraction",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests / Asserts\r",
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"\r",
+									"if(jsonData.returnStatus.message==\"\"){\r",
+									"    message=\"error message: \"+jsonData.resultItems[0].errorMessage+\" error code: \"+jsonData.resultItems[0].errorCode;\r",
+									"}\r",
+									"pm.test(\"Validate response. \"+message, function () {\r",
+									"    //pm.response.to.have.status(200);\r",
+									"    if(jsonData.returnStatus.status!=200){      \r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"    else{\r",
+									"        if(jsonData.resultItems[0].errorMessage!=\"\"){\r",
+									"            pm.expect.fail(message);            \r",
+									"        }\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									"const resultItem = pm.response.json().resultItems[0];\r",
+									"pm.test(\"Validate item response: errorCode = '\" + resultItem.errorCode + \"', errorMessage = '\" + resultItem.errorMessage + \"'\", function () {\r",
+									"    pm.expect(resultItem.errorCode).to.equal(\"\");\r",
+									"    pm.expect(resultItem.errorMessage).to.equal(\"\");\r",
+									"});\r",
+									"\r",
+									"// Convert pageId values to 0 and store.\r",
+									"var uim = resultItem.values.find(el => el.name.toUpperCase() === \"UIMDATA\");\r",
+									"var classIds = resultItem.values.find(el => el.name.toUpperCase() === \"CLASSIFICATIONPAGEIDS\");\r",
+									"pm.test(\"Validation returned values: uim = \" + (uim ? 'defined' : 'undefined') + \", classIds = \" + (classIds ? 'defined' : 'undefined') + \"\", function () {\r",
+									"    pm.expect(uim).not.to.be.undefined;\r",
+									"    pm.expect(classIds).not.to.be.undefined;\r",
+									"});\r",
+									"uim.value.nodeList.forEach(node => {\r",
+									"    node.data.forEach(field => {\r",
+									"        field.pageId = 0;\r",
+									"    })\r",
+									"});\r",
+									"pm.environment.set(\"uimdata_iee_last\", JSON.stringify(uim.value));\r",
+									"pm.environment.set(\"iee_last_class_pageids\", JSON.stringify(classIds.value));\r",
+									"\r",
+									"pm.test(\"Validate document type\", function () {\r",
+									"    pm.expect(jsonData.resultItems[0].values[0].value.docType).to.eql(\"IE Invoice\");\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Validate Extraction ID\", function () {\r",
+									"    pm.expect(jsonData.resultItems[0].values[0].value.extractionId).to.not.be.null;\r",
+									"    pm.expect(jsonData.resultItems[0].values[0].value.extractionId).to.not.eql(\"\");\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Validate Classfication page ID\", function () {\r",
+									"    pm.expect(classIds.value).to.not.be.null;\r",
+									"    pm.expect(classIds.value).to.not.eql(\"\");\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Validate UIM data\",function(){\r",
+									"    var invoiceNo=uim.value.nodeList.find(field=>field.name ===\"InvoiceNumber\");\r",
+									"    pm.expect(invoiceNo.data[0].value).to.eql(\"32611\");\r",
+									"\r",
+									"    var invoiceDate=uim.value.nodeList.find(field=>field.name ===\"InvoiceDate\");\r",
+									"    pm.expect(invoiceDate.data[0].value).to.eql(\"2019-07-30T00:00:00.0000000\");\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"serviceProps\":\r\n    [\r\n        {\r\n            \"name\":\"Env\",\r\n            \"value\":\"D\"\r\n        },\r\n        {\r\n            \"name\":\"IncludeOcrData\",\r\n            \"value\":\"True\"\r\n        },\r\n        {\r\n            \"name\":\"EnableDocumentSeparation\",\r\n            \"value\":\"True\"\r\n        },\r\n        {\r\n            \"name\":\"Project\",\r\n            \"value\":\"InformationExtraction\"\r\n        }\r\n    ],\r\n    \"requestItems\":\r\n    [\r\n        {\r\n            \"nodeId\":1,\r\n            \"values\": null,\r\n            \"files\":\r\n            [\r\n                {\r\n                    \"name\":\"BunnyRidge1\",\r\n                    \"value\": \"{{fileid_bunnyridge1}}\",\r\n                    \"contentType\":\"image/tiff\",\r\n                    \"fileType\":\"tif\"\r\n                }\r\n            ]\r\n        }\r\n    ]\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/cp-rest/session/services/classifyextractdocument?suppress_response_codes=suppress_response_codes",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"services",
+								"classifyextractdocument"
+							],
+							"query": [
+								{
+									"key": "suppress_response_codes",
+									"value": "suppress_response_codes"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Learning - Classification and Extraction",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests / Asserts\r",
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"\r",
+									"if(jsonData.returnStatus.message==\"\"){\r",
+									"    message=\"error message: \"+jsonData.resultItems[0].errorMessage+\" error code: \"+jsonData.resultItems[0].errorCode;\r",
+									"}\r",
+									"pm.test(\"Validate response. \"+message, function () {\r",
+									"    //pm.response.to.have.status(200);\r",
+									"    if(jsonData.returnStatus.status!=200){      \r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"    else{\r",
+									"        if(jsonData.resultItems[0].errorMessage!=\"\"){\r",
+									"            pm.expect.fail(message);            \r",
+									"        }\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									"const resultItem = pm.response.json().resultItems[0];\r",
+									"pm.test(\"Validate item response: errorCode = '\" + resultItem.errorCode + \"', errorMessage = '\" + resultItem.errorMessage + \"'\", function () {\r",
+									"    pm.expect(resultItem.errorCode).to.equal(\"\");\r",
+									"    pm.expect(resultItem.errorMessage).to.equal(\"\");\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"serviceProps\": \r\n    [\r\n        {\r\n            \"name\": \"Env\",\r\n            \"value\": \"D\"\r\n        },\r\n        {\r\n            \"name\": \"Project\",\r\n            \"value\": \"InformationExtraction\"\r\n        }\r\n    ],\r\n    \"requestItems\": \r\n    [\r\n        {\r\n            \"nodeId\": 1,\r\n            \"values\": \r\n            [\r\n                {\r\n                    \"name\": \"Mode\",\r\n                    \"value\": \"ClassifyExtract\"\r\n                },\r\n                {\r\n                    \"name\": \"DocumentType\",\r\n                    \"value\": \"IE Invoice\"\r\n                },\r\n                {\r\n                    \"name\": \"ClassificationPageIds\",\r\n                    \"value\": {{iee_last_class_pageids}}\r\n                },\r\n                {\r\n                    \"name\": \"UimData\",\r\n                    \"value\": {{uimdata_iee_last}} \r\n                }\r\n            ],\r\n            \"files\": \r\n            [\r\n                {\r\n                    \"name\": \"BunnyRidge1\",\r\n                    \"value\": \"{{fileid_bunnyridge1}}\",\r\n                    \"contentType\": \"image/tiff\",\r\n                    \"fileType\": \"tif\"\r\n                }\r\n            ]\r\n        }\r\n    ]\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/cp-rest/session/services/learning?suppress_response_codes=suppress_response_codes",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"services",
+								"learning"
+							],
+							"query": [
+								{
+									"key": "suppress_response_codes",
+									"value": "suppress_response_codes"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "ClassifyExtractPage BunnyRidge1.tif with Information Extraction",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests / Asserts\r",
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"\r",
+									"if(jsonData.returnStatus.message==\"\"){\r",
+									"    message=\"error message: \"+jsonData.resultItems[0].errorMessage+\" error code: \"+jsonData.resultItems[0].errorCode;\r",
+									"}\r",
+									"pm.test(\"Validate response. \"+message, function () {\r",
+									"    //pm.response.to.have.status(200);\r",
+									"    if(jsonData.returnStatus.status!=200){      \r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"    else{\r",
+									"        if(jsonData.resultItems[0].errorMessage!=\"\"){\r",
+									"            pm.expect.fail(message);            \r",
+									"        }\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									"var documentType=pm.response.json().resultItems[0].values.find(docType => docType.name === \"DocumentTypeName\" );\r",
+									"\r",
+									"pm.test(\"Validate document type\", function () {\r",
+									"    pm.expect(documentType.value).to.eql(\"IE Invoice\");\r",
+									"});\r",
+									"\r",
+									"var uim = pm.response.json().resultItems[0].values.find(el => el.name.toUpperCase() === \"UIMDATA\" );\r",
+									"\r",
+									"pm.test(\"Validate UIM data\",function(){\r",
+									"    var invoiceNo=uim.value.nodeList.find(field=>field.name ===\"InvoiceNumber\");\r",
+									"    pm.expect(invoiceNo.data[0].value).to.eql(\"32611\");\r",
+									"\r",
+									"    var invoiceDate=uim.value.nodeList.find(field=>field.name ===\"InvoiceDate\");\r",
+									"    pm.expect(invoiceDate.data[0].value).to.eql(\"2019-07-30T00:00:00.0000000\");\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"serviceProps\":\r\n    [\r\n        {\r\n            \"name\":\"Env\",\r\n            \"value\":\"D\"\r\n        },\r\n        {\r\n            \"name\":\"IncludeOcrData\",\r\n            \"value\":\"True\"\r\n        },\r\n        {\r\n            \"name\":\"Project\",\r\n            \"value\":\"InformationExtraction\"\r\n        }\r\n    ],\r\n    \"requestItems\":\r\n    [\r\n        {\r\n            \"nodeId\":1,\r\n            \"values\": null,\r\n            \"files\":\r\n            [\r\n                {\r\n                    \"name\":\"BunnyRidge1\",\r\n                    \"value\": \"{{fileid_bunnyridge1}}\",\r\n                    \"contentType\":\"image/tiff\",\r\n                    \"fileType\":\"tif\"\r\n                }\r\n            ]\r\n        }\r\n    ]\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/cp-rest/session/services/classifyextractpage?suppress_response_codes=suppress_response_codes",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"services",
+								"classifyextractpage"
+							],
+							"query": [
+								{
+									"key": "suppress_response_codes",
+									"value": "suppress_response_codes"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "ExtractDocument BunnyRidge1.tif with Information Extraction",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests / Asserts\r",
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"\r",
+									"if(jsonData.returnStatus.message==\"\"){\r",
+									"    message=\"error message: \"+jsonData.resultItems[0].errorMessage+\" error code: \"+jsonData.resultItems[0].errorCode;\r",
+									"}\r",
+									"pm.test(\"Validate response. \"+message, function () {\r",
+									"    //pm.response.to.have.status(200);\r",
+									"    if(jsonData.returnStatus.status!=200){      \r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"    else{\r",
+									"        if(jsonData.resultItems[0].errorMessage!=\"\"){\r",
+									"            pm.expect.fail(message);            \r",
+									"        }\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Validate Extraction ID\", function () {\r",
+									"    pm.expect(jsonData.resultItems[0].values[0].value.extractionId).to.not.be.null;\r",
+									"    pm.expect(jsonData.resultItems[0].values[0].value.extractionId).to.not.eql(\"\");\r",
+									"});\r",
+									"\r",
+									"var uim = pm.response.json().resultItems[0].values.find(el => el.name.toUpperCase() === \"UIMDATA\" );\r",
+									"\r",
+									"pm.test(\"Validate UIM data\",function(){\r",
+									"    var invoiceNo=uim.value.nodeList.find(field=>field.name ===\"InvoiceNumber\");\r",
+									"    pm.expect(invoiceNo.data[0].value).to.eql(\"32611\");\r",
+									"\r",
+									"    var invoiceDate=uim.value.nodeList.find(field=>field.name ===\"InvoiceDate\");\r",
+									"    pm.expect(invoiceDate.data[0].value).to.eql(\"2019-07-30T00:00:00.0000000\");\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"serviceProps\":\r\n    [\r\n        {\r\n            \"name\":\"Env\",\r\n            \"value\":\"D\"\r\n        },\r\n        {\r\n            \"name\":\"IncludeOcrData\",\r\n            \"value\":\"True\"\r\n        },\r\n        {\r\n            \"name\":\"Project\",\r\n            \"value\":\"InformationExtraction\"\r\n        }\r\n    ],\r\n    \"requestItems\":\r\n    [\r\n        {\r\n            \"nodeId\":1,\r\n            \"values\": \r\n            [\r\n            \t{\r\n\t\t\t\t\t\"name\":\"DocumentTypeName\",\r\n\t\t\t\t\t\"value\":\"IE Invoice\"\r\n\t\t\t\t},\r\n\t\t\t\t{\r\n\t\t\t\t\t\"name\":\"TemplateIds\",\r\n\t\t\t\t\t\"value\":[\"\"]\r\n\t\t\t\t},\r\n\t\t\t\t{\r\n\t\t\t\t\t\"name\":\"RepeatLastTemplate\",\r\n\t\t\t\t\t\"value\":false\r\n\t\t\t\t}\r\n            ],\r\n            \"files\":\r\n            [\r\n                {\r\n                    \"name\":\"BunnyRidge1\",\r\n                    \"value\": \"{{fileid_bunnyridge1}}\",\r\n                    \"contentType\":\"image/tiff\",\r\n                    \"fileType\":\"tif\"\r\n                }\r\n            ]\r\n        }\r\n    ]\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/cp-rest/session/services/extractdocument?suppress_response_codes=suppress_response_codes",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"services",
+								"extractdocument"
+							],
+							"query": [
+								{
+									"key": "suppress_response_codes",
+									"value": "suppress_response_codes"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "ExtractPage BunnyRidge1.tif with Information Extraction",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests / Asserts\r",
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"\r",
+									"if(jsonData.returnStatus.message==\"\"){\r",
+									"    message=\"error message: \"+jsonData.resultItems[0].errorMessage+\" error code: \"+jsonData.resultItems[0].errorCode;\r",
+									"}\r",
+									"pm.test(\"Validate response. \"+message, function () {\r",
+									"    //pm.response.to.have.status(200);\r",
+									"    if(jsonData.returnStatus.status!=200){      \r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"    else{\r",
+									"        if(jsonData.resultItems[0].errorMessage!=\"\"){\r",
+									"            pm.expect.fail(message);            \r",
+									"        }\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									"var uim = pm.response.json().resultItems[0].values.find(el => el.name.toUpperCase() === \"UIMDATA\" );\r",
+									"\r",
+									"pm.test(\"Validate UIM data\",function(){\r",
+									"    var invoiceNo=uim.value.nodeList.find(field=>field.name ===\"InvoiceNumber\");\r",
+									"    pm.expect(invoiceNo.data[0].value).to.eql(\"32611\");\r",
+									"\r",
+									"    var invoiceDate=uim.value.nodeList.find(field=>field.name ===\"InvoiceDate\");\r",
+									"    pm.expect(invoiceDate.data[0].value).to.eql(\"2019-07-30T00:00:00.0000000\");\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"serviceProps\":\r\n    [\r\n        {\r\n            \"name\":\"Env\",\r\n            \"value\":\"D\"\r\n        },\r\n        {\r\n            \"name\":\"IncludeOcrData\",\r\n            \"value\":\"True\"\r\n        },\r\n        {\r\n            \"name\":\"Project\",\r\n            \"value\":\"InformationExtraction\"\r\n        }\r\n    ],\r\n    \"requestItems\":\r\n    [\r\n        {\r\n            \"nodeId\":1,\r\n            \"values\": \r\n            [\r\n            \t{\r\n\t\t\t\t\t\"name\":\"DocumentTypeName\",\r\n\t\t\t\t\t\"value\":\"IE Invoice\"\r\n\t\t\t\t},\r\n\t\t\t\t{\r\n\t\t\t\t\t\"name\":\"TemplateId\",\r\n\t\t\t\t\t\"value\":\"\"\r\n\t\t\t\t},\r\n\t\t\t\t{\r\n\t\t\t\t\t\"name\":\"PageIndex\",\r\n\t\t\t\t\t\"value\":\"0\"\r\n\t\t\t\t}\r\n            ],\r\n            \"files\":\r\n            [\r\n                {\r\n                    \"name\":\"BunnyRidge1\",\r\n                    \"value\": \"{{fileid_bunnyridge1}}\",\r\n                    \"contentType\":\"image/tiff\",\r\n                    \"fileType\":\"tif\"\r\n                }\r\n            ]\r\n        }\r\n    ]\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/cp-rest/session/services/extractpage?suppress_response_codes=suppress_response_codes",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"services",
+								"extractpage"
+							],
+							"query": [
+								{
+									"key": "suppress_response_codes",
+									"value": "suppress_response_codes"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Other Service Requests",
+			"item": [
+				{
+					"name": "FullPageOCR - PDF - Two Images",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests / Asserts",
+									"const jsonData = pm.response.json();",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;",
+									"",
+									"if(jsonData.returnStatus.message==\"\"){",
+									"    message=\"error message: \"+jsonData.resultItems[0].errorMessage+\" error code: \"+jsonData.resultItems[0].errorCode;",
+									"}",
+									"pm.test(\"Validate response. \"+message, function () {",
+									"    //pm.response.to.have.status(200);",
+									"    if(jsonData.returnStatus.status!=200){      ",
+									"        pm.expect.fail(message);",
+									"    }",
+									"    else{",
+									"        if(jsonData.resultItems[0].errorMessage!=\"\"){",
+									"            pm.expect.fail(message);            ",
+									"        }",
+									"    }",
+									"});",
+									"",
+									"// Store",
+									"pm.environment.set(\"fileid_fpocr_result\", pm.response.json().resultItems[0].files[0].value);",
+									"pm.test(\"Validate file ID\", function () {",
+									"    pm.expect(pm.response.json().resultItems[0].files[0].value).to.not.be.null;",
+									"});",
+									"",
+									"pm.test(\"Validate Content Type\", function () {",
+									"    pm.expect(pm.response.json().resultItems[0].files[0].contentType).to.eql(\"application/pdf\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"content-type": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/hal+json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"serviceProps\":\r\n    [\r\n        {\r\n            \"name\":\"Env\",\r\n            \"value\":\"D\"\r\n        },\r\n        {\r\n            \"name\":\"OcrEngineName\",\r\n            \"value\":\"Advanced\"\r\n        },\r\n        {\r\n            \"name\":\"AutoRotate\",\r\n            \"value\":\"False\"\r\n        },\r\n        {\r\n            \"name\":\"Country\",\r\n            \"value\":\"USA\"\r\n        },\r\n        {\r\n            \"name\":\"ProcessingMode\",\r\n            \"value\":\"VoteOcrAndEText\"\r\n        }\r\n    ],\r\n    \"requestItems\":\r\n    [\r\n        {\r\n            \"nodeId\":1,\r\n            \"values\":\r\n            [\r\n                {\r\n                    \"name\":\"OutputType\",\r\n                    \"value\":\"Pdf\"\r\n                },\r\n                {\r\n                    \"name\":\"Version\",\r\n                    \"value\":\"Pdf\"\r\n                },\r\n                {\r\n                    \"name\":\"Compression\",\r\n                    \"value\":\"None\"\r\n                },\r\n                {\r\n                    \"name\":\"ImageSelection\",\r\n                    \"value\":\"OriginalImage\"\r\n                }\r\n            ],\r\n            \"files\":\r\n            [\r\n                {\r\n                    \"name\":\"TestBrokerStatement\",\r\n                    \"value\": \"{{fileid_testbroker}}\",\r\n                    \"contentType\":\"image/tiff\",\r\n                    \"fileType\":\"tif\"\r\n                },\r\n                {\r\n                    \"name\":\"BunnyRidge1\",\r\n                    \"value\": \"{{fileid_bunnyridge1}}\",\r\n                    \"contentType\":\"image/tiff\",\r\n                    \"fileType\":\"tif\"\r\n                }\r\n            ]\r\n        }\r\n    ]\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/cp-rest/session/services/fullpageocr?suppress_response_codes=suppress_response_codes",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"services",
+								"fullpageocr"
+							],
+							"query": [
+								{
+									"key": "suppress_response_codes",
+									"value": "suppress_response_codes"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get FPOCR Result PDF",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests / Asserts\r",
+									"pm.test(\"Validate response.\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/cp-rest/session/files/{{fileid_fpocr_result}}",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"files",
+								"{{fileid_fpocr_result}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Redact with ProcessImage TestBrokerStatement.tif with Sample Advanced Recognition Demo",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests / Asserts\r",
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"\r",
+									"if(jsonData.returnStatus.message==\"\"){\r",
+									"    message=\"error message: \"+jsonData.resultItems[0].errorMessage+\" error code: \"+jsonData.resultItems[0].errorCode;\r",
+									"}\r",
+									"pm.test(\"Validate response. \"+message, function () {\r",
+									"    //pm.response.to.have.status(200);\r",
+									"    if(jsonData.returnStatus.status!=200){      \r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"    else{\r",
+									"        if(jsonData.resultItems[0].errorMessage!=\"\"){\r",
+									"            pm.expect.fail(message);            \r",
+									"        }\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									"// Store\r",
+									"pm.environment.set(\"fileid_testbroker_redacted\", pm.response.json().resultItems[0].files[0].value);\r",
+									"pm.test(\"Validate file ID\", function () {\r",
+									"    pm.expect(pm.response.json().resultItems[0].files[0].value).to.not.be.null;\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Validate Content Type\", function () {\r",
+									"    pm.expect(pm.response.json().resultItems[0].files[0].contentType).to.eql(\"image/tiff\");\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"serviceProps\":\r\n    [\r\n        {\r\n            \"name\":\"Env\",\r\n            \"value\":\"D\"\r\n        },\r\n        {\r\n        \t\"name\":\"ReturnFileDataInline\",\r\n        \t\"value\":false\r\n        },\r\n        {\r\n        \t\"name\":\"Redact\",\r\n        \t\"value\":true\r\n        }\r\n    ],\r\n    \"requestItems\":\r\n    [\r\n        {\r\n            \"nodeId\":1,\r\n            \"values\": \r\n            [\r\n            \t{\r\n\t\t\t\t\t\"name\":\"Rectangles\",\r\n\t\t\t\t\t\"value\":\r\n\t\t\t\t\t[\r\n\t\t\t\t\t\t{\r\n\t\t\t\t\t\t\t\"left\":39,\r\n\t\t\t\t\t\t\t\"top\":118,\r\n\t\t\t\t\t\t\t\"width\":88,\r\n\t\t\t\t\t\t\t\"height\":18\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t]\r\n\t\t\t\t}\r\n            ],\r\n            \"files\":\r\n            [\r\n                {\r\n                    \"name\":\"TestBrokerStatement\",\r\n                    \"value\": \"{{fileid_testbroker}}\",\r\n                    \"contentType\":\"image/tiff\",\r\n                    \"fileType\":\"tif\"\r\n                }\r\n            ]\r\n        }\r\n    ]\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/cp-rest/session/services/processimage?suppress_response_codes=suppress_response_codes",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"services",
+								"processimage"
+							],
+							"query": [
+								{
+									"key": "suppress_response_codes",
+									"value": "suppress_response_codes"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get testbroker_redacted",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests / Asserts\r",
+									"pm.test(\"Validate response.\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/cp-rest/session/files/{{fileid_testbroker_redacted}}",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"files",
+								"{{fileid_testbroker_redacted}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "ReadBarCodes Service",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests / Asserts\r",
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"\r",
+									"if(jsonData.returnStatus.message==\"\"){\r",
+									"    message=\"error message: \"+jsonData.resultItems[0].errorMessage+\" error code: \"+jsonData.resultItems[0].errorCode;\r",
+									"}\r",
+									"pm.test(\"Validate response. \"+message, function () {\r",
+									"    //pm.response.to.have.status(200);\r",
+									"    if(jsonData.returnStatus.status!=200){      \r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"    else{\r",
+									"        if(jsonData.resultItems[0].errorMessage!=\"\"){\r",
+									"            pm.expect.fail(message);            \r",
+									"        }\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									"var barcodeType=pm.response.json().resultItems[0].values.find(type => type.name === \"Barcode0_Type\" );\r",
+									"\r",
+									"var barcodeText=pm.response.json().resultItems[0].values.find(text => text.name === \"Barcode0_Text\" );\r",
+									"\r",
+									"pm.test(\"Validate Barcode Type\", function () {\r",
+									"    pm.expect(barcodeType.value).to.eql(\"Code39\");\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Validate Barcode text\", function () {\r",
+									"    pm.expect(barcodeText.value).to.eql(\"ALFONS\");\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n   \"serviceProps\":\r\n\t[\r\n\t\t{\r\n\t\t\t\"name\":\"Env\",\r\n\t\t\t\"value\":\"D\"\r\n\t\t},\r\n\t\t{\r\n\t\t\t\"name\":\"Mode\",\r\n\t\t\t\"value\":\"Normal\"\r\n\t\t},\r\n\t\t{\r\n\t\t\t\"name\":\"Orientation\",\r\n\t\t\t\"value\":\"HorizontalVertical\"\r\n\t\t},\r\n\t\t{\r\n\t\t\t\"name\":\"Decode\",\r\n\t\t\t\"value\":true\r\n\t\t},\r\n\t\t{\r\n\t\t\t\"name\":\"Characters\",\r\n\t\t\t\"value\":\"0\"\r\n\t\t},\r\n\t\t{\r\n\t\t\t\"name\":\"MinHeight\",\r\n\t\t\t\"value\":\"0\"\r\n\t\t},\r\n\t\t{\r\n\t\t\t\"name\":\"ScanDistance\",\r\n\t\t\t\"value\":\"10\"\r\n\t\t},\r\n\t\t{\r\n\t\t\t\"name\":\"BarcodeTypes\",\r\n\t\t\t\"value\":\"\"\r\n\t\t},\r\n\t\t{\r\n\t\t\t\"name\":\"UseChecksum\",\r\n\t\t\t\"value\":false\r\n\t\t},\r\n\t\t{\r\n\t\t\t\"name\":\"UseRegion\",\r\n\t\t\t\"value\":\"\"\r\n\t\t}\r\n\t],\r\n\t\"requestItems\":\r\n\t[\r\n\t\t{\r\n\t\t\t\"nodeId\":1,\r\n\t\t\t\"values\":null,\r\n\t\t\t\"files\":\r\n\t\t\t[\r\n\t\t\t\t{\r\n\t\t\t\t\t\"name\":\"Barcodes\",\r\n\t\t\t\t\t\"value\":\"{{fileid_barcode}}\",\r\n\t\t\t\t\t\"contentType\":\"image/tiff\",\r\n\t\t\t\t\t\"fileType\":\"TIF\"\r\n\t\t\t\t}\r\n\t\t\t]\r\n\t\t}\r\n\t]\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/cp-rest/session/services/readbarcodes?suppress_response_codes=suppress_response_codes",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"services",
+								"readbarcodes"
+							],
+							"query": [
+								{
+									"key": "suppress_response_codes",
+									"value": "suppress_response_codes"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "ConvertImages SplitPDFProfile DoodadsTestWren",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests / Asserts\r",
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"\r",
+									"if(jsonData.returnStatus.message==\"\"){\r",
+									"    message=\"error message: \"+jsonData.resultItems[0].errorMessage+\" error code: \"+jsonData.resultItems[0].errorCode;\r",
+									"}\r",
+									"pm.test(\"Validate response. \"+message, function () {\r",
+									"    //pm.response.to.have.status(200);\r",
+									"    if(jsonData.returnStatus.status!=200){      \r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"    else{\r",
+									"        if(jsonData.resultItems[0].errorMessage!=\"\"){\r",
+									"            pm.expect.fail(message);            \r",
+									"        }\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Validate Number of pages\", function () {\r",
+									"    pm.expect(pm.response.json().resultItems[0].files.length).to.eql(3);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Validate file content type of pages\", function () {\r",
+									"    var pages=pm.response.json().resultItems[0].files;\r",
+									"    for(var i=0;i<pages.length;i++){\r",
+									"        pm.expect(pages[i].contentType).to.eql(\"image/tiff\");\r",
+									"    }\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"serviceProps\": [\r\n        {\r\n            \"name\": \"Env\",\r\n            \"value\": \"S\"\r\n        },\r\n        {\r\n            \"name\": \"Profile\",\r\n            \"value\": \"SplitPdfProfile\"\r\n        },\r\n        {\r\n            \"name\": \"ReturnFileDataInline\",\r\n            \"value\": false\r\n        }\r\n    ],\r\n    \"requestItems\": \r\n    [\r\n        {\r\n            \"nodeId\": 1,\r\n            \"files\": \r\n            [\r\n                {\r\n                    \"name\": \"PdfFileToSplit\",\r\n                    \"value\": \"{{fileid_pdf_doodads_wren}}\",\r\n                    \"contentType\": \"application/pdf\",\r\n                    \"fileType\": \"pdf\"\r\n                }\r\n            ]\r\n        }\r\n    ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/cp-rest/session/services/convertimages?suppress_response_codes=suppress_response_codes",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"services",
+								"convertimages"
+							],
+							"query": [
+								{
+									"key": "suppress_response_codes",
+									"value": "suppress_response_codes"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "ProcessImagePipeline Service",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests / Asserts\r",
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"\r",
+									"if(jsonData.returnStatus.message==\"\"){\r",
+									"    message=\"error message: \"+jsonData.resultItems[0].errorMessage+\" error code: \"+jsonData.resultItems[0].errorCode;\r",
+									"}\r",
+									"pm.test(\"Validate response. \"+message, function () {\r",
+									"    //pm.response.to.have.status(200);\r",
+									"    if(jsonData.returnStatus.status!=200){      \r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"    else{\r",
+									"        if(jsonData.resultItems[0].errorMessage!=\"\"){\r",
+									"            pm.expect.fail(message);            \r",
+									"        }\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									"var documentType=pm.response.json().resultItems[0].values.find(docType => docType.name === \"DocumentTypeName\" );\r",
+									"\r",
+									"pm.test(\"Validate document type\", function () {\r",
+									"    pm.expect(documentType.value).to.eql(\"TestQABrokerStatementNew\");\r",
+									"});\r",
+									"\r",
+									"var uim = pm.response.json().resultItems[0].values.find(el => el.name.toUpperCase() === \"UIMDATA\" );\r",
+									"\r",
+									"pm.test(\"Validate UIM data\",function(){\r",
+									"    var to=uim.value.nodeList.find(field=>field.name ===\"To\");\r",
+									"    pm.expect(to.data[0].value).to.include(\"EMC Insurance Company\");\r",
+									"\r",
+									"    var from=uim.value.nodeList.find(field=>field.name ===\"From\");\r",
+									"    pm.expect(from.data[0].value).to.include(\"Kline Technology Partners\");\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"serviceProps\":\r\n    [\r\n        {\r\n            \"name\":\"Env\",\r\n            \"value\":\"D\"\r\n        },\r\n        {\r\n            \"name\":\"ImageProfile\",\r\n            \"value\":\"\"\r\n        },\r\n        {\r\n            \"name\":\"ReturnFileDataInline\",\r\n            \"value\":false\r\n        },\r\n        {\r\n            \"name\":\"Classify\",\r\n            \"value\":true\r\n        },\r\n        {\r\n            \"name\":\"Extract\",\r\n            \"value\":true\r\n        },\r\n        {\r\n            \"name\":\"IncludeOcrData\",\r\n            \"value\":true\r\n        },\r\n        {\r\n            \"name\":\"Project\",\r\n            \"value\":\"Default\"\r\n        }\r\n    ],\r\n    \"requestItems\":\r\n    [\r\n        {\r\n            \"nodeId\":1,\r\n            \"values\":null,\r\n            \"files\":\r\n            [\r\n                {\r\n                    \"name\":\"TestBroker\",\r\n                    \"value\":\"{{fileid_testbroker}}\",\r\n                    \"contentType\":\"image/tiff\",\r\n                    \"fileType\":\"tif\"\r\n                }\r\n            ]\r\n        }\r\n    ]\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/cp-rest/session/services/processimagepipeline?suppress_response_codes=suppress_response_codes",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"services",
+								"processimagepipeline"
+							],
+							"query": [
+								{
+									"key": "suppress_response_codes",
+									"value": "suppress_response_codes"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UimData Service Using AR Result",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests / Asserts\r",
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"\r",
+									"if(jsonData.returnStatus.message==\"\"){\r",
+									"    message=\"error message: \"+jsonData.resultItems[0].errorMessage+\" error code: \"+jsonData.resultItems[0].errorCode;\r",
+									"}\r",
+									"pm.test(\"Validate response. \"+message, function () {\r",
+									"    //pm.response.to.have.status(200);\r",
+									"    if(jsonData.returnStatus.status!=200){      \r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"    else{\r",
+									"        if(jsonData.resultItems[0].errorMessage!=\"\"){\r",
+									"            pm.expect.fail(message);            \r",
+									"        }\r",
+									"    }\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"serviceProps\":[],\r\n    \"requestItems\":\r\n    [\r\n         {\r\n              \"nodeId\":1,\r\n              \"values\":\r\n              [\r\n                   {\r\n                        \"name\":\"Command\",\r\n                        \"value\":\"Validate\"\r\n                   },                   \r\n                   {\r\n                        \"name\":\"UimData\",\r\n                        \"value\": {{uimdata_ar_last}}\r\n                   }\r\n              ]\r\n         }\r\n    ]\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/cp-rest/session/services/uimdata?suppress_response_codes=suppress_response_codes",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"services",
+								"uimdata"
+							],
+							"query": [
+								{
+									"key": "suppress_response_codes",
+									"value": "suppress_response_codes"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Delete Files and End Session",
+			"item": [
+				{
+					"name": "Delete All Files",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests / Asserts\r",
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"pm.test(\"Validate response.\"+message, function () {\r",
+									"    //pm.response.to.have.status(200);\r",
+									"    if(jsonData.returnStatus.status!=200){\r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/cp-rest/session/files?filter=*&suppress_response_codes=suppress_response_codes",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session",
+								"files"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "*"
+								},
+								{
+									"key": "suppress_response_codes",
+									"value": "suppress_response_codes"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE Session",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests / Asserts\r",
+									"const jsonData = pm.response.json();\r",
+									"var message=\"error message: \"+jsonData.returnStatus.message+\" error code: \"+jsonData.returnStatus.code;\r",
+									"pm.test(\"Validate response.\"+message, function () {\r",
+									"    //pm.response.to.have.status(200);\r",
+									"    if(jsonData.returnStatus.status!=200){\r",
+									"        pm.expect.fail(message);\r",
+									"    }\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "accessToken",
+									"value": "{{token}}",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/cp-rest/session?suppress_response_codes=suppress_response_codes",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"cp-rest",
+								"session"
+							],
+							"query": [
+								{
+									"key": "suppress_response_codes",
+									"value": "suppress_response_codes"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
