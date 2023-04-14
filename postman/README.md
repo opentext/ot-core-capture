@@ -1,8 +1,5 @@
 Initial Date: August 3, 2020
-Initial Author: Tom Baker
-
 Revision Date: March 31, 2023
-Revision Author: Tom Baker
 
 ================================
 
